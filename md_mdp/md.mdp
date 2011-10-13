@@ -1,0 +1,186 @@
+include                  = 
+define                   = 
+
+integrator               = md
+tinit                    = 0
+dt                       = 0.002
+nsteps                   = 100000000
+simulation_part          = 1
+init_step                = 0
+comm-mode                = Linear
+nstcomm                  = 1
+comm-grps                = 
+
+bd-fric                  = 0
+ld-seed                  = 1993
+
+emtol                    = 10
+emstep                   = 0.01
+niter                    = 20
+fcstep                   = 0
+nstcgsteep               = 1000
+nbfgscorr                = 10
+
+rtpi                     = 0.05
+
+nstxout                  = 0
+nstvout                  = 0
+nstfout                  = 0
+nstlog                   = 200000
+nstenergy                = 5000
+nstxtcout                = 5000
+xtc-precision            = 1000
+xtc-grps                 = 
+energygrps               = Protein Non-Protein
+
+nstlist                  = 10
+ns_type                  = grid
+pbc                      = xyz
+periodic_molecules       = no
+rlist                    = 0.9
+
+coulombtype              = PME
+rcoulomb-switch          = 0
+rcoulomb                 = 0.9
+epsilon_r                = 1
+epsilon_rf               = 1
+vdwtype                  = cut-off
+rvdw-switch              = 0
+rvdw                     = 1.4
+DispCorr                 = EnerPres
+table-extension          = 1
+energygrp_table          = 
+fourierspacing           = 0.12
+fourier_nx               = 0
+fourier_ny               = 0
+fourier_nz               = 0
+pme_order                = 4
+ewald_rtol               = 1e-05
+ewald_geometry           = 3d
+epsilon_surface          = 0
+optimize_fft             = yes
+
+implicit_solvent         = No
+
+gb_algorithm             = Still
+nstgbradii               = 1
+rgbradii                 = 2
+gb_epsilon_solvent       = 80
+gb_saltconc              = 0
+gb_obc_alpha             = 1
+gb_obc_beta              = 0.8
+gb_obc_gamma             = 4.85
+sa_surface_tension       = 2.092
+
+tcoupl                   = nose-hoover
+tc-grps                  = Protein Non-Protein
+tau_t                    = 0.1     0.1
+;ref_t                    = 300	   300
+pcoupl                   = Parrinello-Rahman
+pcoupltype               = isotropic
+tau_p                    = 2.0
+compressibility          = 4.5e-5
+ref_p                    = 1.0
+refcoord_scaling         = No
+andersen_seed            = -1
+
+QMMM                     = no
+QMMM-grps                = 
+QMmethod                 = 
+QMMMscheme               = normal
+QMbasis                  = 
+QMcharge                 = 
+QMmult                   = 
+SH                       = 
+CASorbitals              = 
+CASelectrons             = 
+SAon                     = 
+SAoff                    = 
+SAsteps                  = 
+MMChargeScaleFactor      = 1
+bOPT                     = 
+bTS                      = 
+
+annealing                = 
+annealing_npoints        = 
+annealing_time           = 
+annealing_temp           = 
+
+gen_vel                  = yes
+;gen-temp                 = 300
+gen-seed                 = -1
+
+constraints              = all-bonds
+constraint_algorithm     = lincs
+continuation             = no
+Shake-SOR                = no
+shake-tol                = 0.0001
+lincs_order              = 4
+lincs_iter               = 1
+lincs-warnangle          = 30
+morse                    = no
+
+energygrp_excl           = 
+
+nwall                    = 0
+wall_type                = 9-3
+wall_r_linpot            = -1
+wall_atomtype            = 
+wall_density             = 
+wall_ewald_zfac          = 3
+
+pull                     = no
+
+disre                    = No
+disre-weighting          = Conservative
+disre-mixed              = no
+disre-fc                 = 1000
+disre-tau                = 0
+nstdisreout              = 100
+orire                    = no
+orire-fc                 = 0
+orire-tau                = 0
+orire-fitgrp             = 
+nstorireout              = 100
+dihre                    = no
+dihre-fc                 = 1000
+
+free-energy              = no
+init-lambda              = 0
+delta-lambda             = 0
+sc-alpha                 = 0
+sc-power                 = 0
+sc-sigma                 = 0.3
+couple-moltype           = 
+couple-lambda0           = vdw-q
+couple-lambda1           = vdw-q
+couple-intramol          = no
+
+acc-grps                 = 
+accelerate               = 
+freezegrps               = 
+freezedim                = 
+cos-acceleration         = 0
+deform                   = 
+
+E-x                      = 
+E-xt                     = 
+E-y                      = 
+E-yt                     = 
+E-z                      = 
+E-zt                     = 
+
+user1-grps               = 
+user2-grps               = 
+userint1                 = 0
+userint2                 = 0
+userint3                 = 0
+userint4                 = 0
+userreal1                = 0
+userreal2                = 0
+userreal3                = 0
+userreal4                = 0
+
+@ id = 1, 2, 3, 4, 5
+@ ref_t = 250 250, 275 275, 300 300, 325 325, 350 350
+@ gen_temp = 250, 275, 300, 325, 350
