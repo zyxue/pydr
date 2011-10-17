@@ -75,7 +75,7 @@ sa_surface_tension       = 2.092
 tcoupl                   = nose-hoover
 tc-grps                  = Protein Non-Protein
 tau_t                    = 0.1     0.1
-;ref_t                    = 300	   300
+ref_t                    = ${REF_T}
 pcoupl                   = Parrinello-Rahman
 pcoupltype               = isotropic
 tau_p                    = 2.0
@@ -181,6 +181,7 @@ userreal2                = 0
 userreal3                = 0
 userreal4                = 0
 
-@ id = 1, 2, 3, 4, 5
+@ exchangeid = 0, 0, 0, 0, 0
+@ replicaid = 0, 1, 2, 3, 4
 @ ref_t = 250 250, 275 275, 300 300, 325 325, 350 350
 @ gen_temp = 250, 275, 300, 325, 350
