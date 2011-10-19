@@ -43,7 +43,7 @@ class Exchanges(Base):
         self.date = date
 
     def __repr__(self):
-        return "<%d %f %s %s %r>" % (potential_energy, to_change, changed, date)
+        return "<%r %r %r %r %r %r>" % (self.potential_energy, self.original, self.to_change, self.changed, self.global_temps, self.date)
 
 def init_db(ref_ts):
     for t in ref_ts:
@@ -59,6 +59,52 @@ def exchange_or_not(original, to_change):
         changed = original
     return changed
 
+def test_init_values():
+    initial_temps = range(200, 301, 10)
+    global_temps = ' '.join([str(i) for i in initial_temps])
+
+    potential_energy = None
+    original = None
+    to_change = None
+    changed = None
+    date = time.ctime()
+
+    return potential_energy, original, to_change, changed, global_temps, date
+
+def test_firsttime_write_db(session):
+    if not os.path.exists('/tmp/md_mdp.db'):
+        init_db(initial_temps)
+    
+    ex = Exchanges(*test_init_values())
+    ss.add(ex)
+
+def test_write_db(session):
+    potential_energy, original, to_change, changed, global_temps, date = test_init_values()
+
+    gt = global_temps.split(' ')
+
+    for i in range(10):
+        k = random.randint(0,10)
+        original = gt[k]
+        if k == 10:
+            to_change = gt[0]
+        else:
+            to_change = gt[k+1]
+            changed = exchange_or_not(original, to_change)
+            gt[k] = changed
+            global_temps = ' '.join(gt)
+            date = time.ctime()
+            ex = Exchanges(potential_energy, original, to_change, changed, global_temps, date)
+        ss.add(ex)
+
+    session.commit()
+
+def test_read_db(session):
+    q = session.query(Exchanges)
+    s = q.filter(Exchanges.exchangeid == '1')
+    print "#" * 20
+    print s[0].global_temps
+    print "#" * 20
 
 if __name__ == "__main__":
     engine = sqlmy.create_engine('sqlite:////tmp/md_mdp.db', echo=True)
@@ -66,35 +112,7 @@ if __name__ == "__main__":
 
     Session = sessionmaker(bind=engine)
     ss = Session()
+    # firsttime_write_db(ss)
+    # test_write_db(ss)
+    test_read_db(ss)
 
-    initial_temps = range(200, 301, 10)
-
-    if not os.path.exists('/tmp/md_mdp.db'):
-        init_db(initial_temps)
-
-    gt = [str(i) for i in initial_temps]
-    global_temps = ' '.join(gt)
-
-    potential_energy = 12.003
-    original = None
-    to_change = None
-    changed = None
-    date = time.ctime()
-
-    for i in range(10):
-        ex = Exchanges(potential_energy, original, to_change, changed, global_temps, date)
-        ss.add(ex)
-        k = random.randint(0,10)
-        original = gt[k]
-        if k == 10:
-            to_change = gt[0]
-        else:
-            to_change = gt[k+1]
-        changed = exchange_or_not(original, to_change)
-        gt[k] = changed
-        global_temps = ' '.join(gt)
-        
-    ss.commit()
-
-    # for r in ss.query(Variables).all():
-    #     print r.ref_t, r.gen_temp
