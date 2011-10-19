@@ -5,3 +5,7 @@
 5. read from db
 6. (Exchange)
 7. write to db, go back to 3
+
+/client
+	/0_mdrun.sh
+	/*tpr file
