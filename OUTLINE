@@ -9,3 +9,11 @@
 /client
 	/0_mdrun.sh
 	/*tpr file
+
+python pydr.py
+read cfg
+init_db, write Replicas info
+
+server: init_jobs, records job_info (time when the job is dispatched), submit_jobs, 
+
+client: when the job starts, send the info(jobib, start_time, jobname) to server.

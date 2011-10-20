@@ -1,10 +1,8 @@
 import pickle
 import time
 import copy
-import json
-import urllib
-import urllib2
 import threading
+import socket
 
 from flask import Flask, request, session, g
 
@@ -13,13 +11,14 @@ app = Flask(__name__)
 @app.route("/", methods=['GET', 'POST'])
 def index():
     if request.method == 'POST':
-        print request.form['job_done']
-        return json.dumps(['mdrun', '-v', '-deffnm', 'sq1e00_md'])
+      print request.form['pbs_jobname']
+        return 'great!'
 
     elif request.method == "GET":
         return "hello"
 
 if __name__ == "__main__":
+    print socket.gethostbyname(socket.gethostname())
     # def run_app():
     app.run(debug=True)
 

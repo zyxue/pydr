@@ -4,14 +4,9 @@ import copy
 import time
 import requests
 import subprocess
-import logging
-import threading
-from flask import Flask, request, session, g
-from string import Template
 from configobj import ConfigObj
-from cls import *
+from Job import Job
 
-import pydr
 import os
 import random
 
@@ -20,64 +15,60 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, Integer, String, Float
 
-from pprint import pprint as pp
-
 Base = declarative_base()
 
-def run_app():
-    pydr.app.run()
+from pprint import pprint as pp
 
-def main():
+def test_connect():
+    url = 'http://127.0.0.1:5000'
+    j = Job()
+    task = j.connect_server(url)
+    print task
+
+def test_read_cfg():
+    cfg = ConfigObj('/home/zyxue/projects/pydr/sq1e/pydr.cfg')
+
+def test_init_db():
     cfg = ConfigObj('/home/zyxue/projects/pydr/sq1e/pydr.cfg')
     database = cfg['system']['database']
-
-    # should be done by the server
+    db = sqlmy.create_engine('sqlite:///{0}'.format(database), echo=True)
+    Session = sessionmaker(bind=db)
+    Session.configure(bind=db)
+    ss = Session()
     if not os.path.exists(database):                              # first time
-        init_db()
-
-        # start_server
-        # threading.Thread(target=run_app).start()
-        uri = 'http://127.0.0.1:5000'
-        # write server address to some file
-        with open(cfg['system']['hostfile'], 'w') as opf:
-            opf.write('{0}\n'.format(uri))
-
-        # starts pydr in all directories
+        Base.metadata.create_all(db)
         for r in cfg['replicas']:
             rep = cfg['replicas'][r]
-            rdir = os.path.join(cfg['system']['pwd'], r)
-            os.chdir(rdir)
-            if os.path.exists('0_mdrun.sh'):
-                print rdir, '0_mdrun.sh'    
-                # in real submit 0_mdrun.sh instead, 0_mdrun.sh contains the
-                # code that run pydr.py in rdir
-            else:
-                logging.error('{0} has not 0_mdrun.sh'.format(rdir))
-
-    # client:
-    # get the replica number from the server
-
+            ss.add(Replica(rep['ref_t'], rep['gen_temp'], 0))
+        ss.commit()
     else:
-        # 1. the server shall has been running, look for server address, could request for job now
-        # 2. after unexpected scient crush, everything should be restarted, and cpt file will be used.
+        q = ss.query(Replica)
+        qf = q.filter(Replica.ref_t == '300')[0]
+        pp(type(qf))
+        pp(dir(qf))
+        print type(qf.status)
 
-        # 1. Should check existence of hostfile to make sure server is running; how?
-        while True:
-            with open(cfg['system']['hostfile'], 'r') as inf:
-                uri = inf.readline().strip()
-                j = Job()
-                r = j.connect_server(uri)
-                # done something with r
-                print r.content
+class Replica(Base):
+    __tablename__ = 'replicas'
 
-        # md_mdpf = os.path.join(rdir, '{0}_md.mdp'.format(pf))
-        # with open(cfg['system']['smp_md_mdp'], 'r') as inf:
-        #     with open(md_mdpf, 'w') as opf:
-        #         opf.writelines([Template(l).safe_substitute(dict(rep))
-        #                         for l in inf.readlines()])
+    replicaid = Column(Integer, primary_key=True)
+    ref_t = Column(String)
+    gen_temp = Column(String)
+    status = Column(Integer)
+
+    def __init__(self, ref_t, gen_temp, status):
+        self.ref_t = ref_t
+        self.gen_temp = gen_temp
+        self.status = status
+
+    def __repr__(self):
+        return "<id: %d ref_t: %s gen_temp: %s status %d>" % (
+            self.replicaid, self.ref_t, self.gen_temp, self.status)
+
 
 if __name__ == "__main__":
-    main()
+    test_connect()
+
 
 # class Exchanges(Base):
 #     __tablename__ = "Exchanges"
