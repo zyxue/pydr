@@ -4,7 +4,7 @@
 #include "eth.itp"
 
 [ system ]
-sq1e00
+sq1e
 
 [ molecules ]
 sq1	    1

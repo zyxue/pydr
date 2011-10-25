@@ -1,84 +1,71 @@
 #!/usr/bin/env python
-
-import copy
-import time
-import requests
-import subprocess
-import logging
-import threading
-from flask import Flask, request, session, g
-from string import Template
-from configobj import ConfigObj
-from cls import *
-
-import pydr
 import os
 import random
-
-import sqlalchemy as sqlmy
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column, Integer, String, Float
+import logging
+import requests
+import subprocess
+import threading
+import pickle
+import json
+from configobj import ConfigObj
+from flask import Flask, request, session, g
+from cls import *
 
 from pprint import pprint as pp
 
-Base = declarative_base()
-
-def run_app():
-    pydr.app.run()
-
 def main():
-    cfg = ConfigObj('./pydr.cfg')
+    cfg = ConfigObj('../../pydr.cfg')
     hostfile = cfg['system']['hostfile']
+    temp_tuple = tuple(cfg['miscellaneous']['temp_tuple'])
+    print temp_tuple
 
-    # should be done by the server
-    if not os.path.exists(database): # first time
-        init_db()
+    firsttime = 0
+    while True:
+        if not os.path.exists(hostfile):
+            logging.error('No hostfile!\n')
+        else:
+            with open(hostfile, 'r') as inf:
+                # just 2 seconds, in case the hostfile has been opened by
+                # another node, but the writting hasn't finished yet. more than
+                # that means server died
+                for i in range(2):
+                    where = inf.tell()
+                    line = inf.readline().strip()
+                    if not line.strip():
+                        time.sleep(1)
+                        inf.seek(where)
+                    else:
+                        uri = line
+                        break
 
-        # start_server
-        # threading.Thread(target=run_app).start()
-        uri = 'http://127.0.0.1:5000'
-        # write server address to some file
-        with open(cfg['system']['hostfile'], 'w') as opf:
-            opf.write('{0}\n'.format(uri))
+    # 1. the server shall has been running, look for server address, could request for job now
+    # 2. after unexpected scient crush, everything should be restarted, and cpt file will be used.
+    # 1. Should check existence of hostfile to make sure server is running; how?
 
-        # starts pydr in all directories
-        for r in cfg['replicas']:
-            rep = cfg['replicas'][r]
-            rdir = os.path.join(os.getenv['PWD'], r)
-            os.chdir(rdir)
-            if os.path.exists('0_mdrun.sh'):
-                print rdir, '0_mdrun.sh'    
-                # in real submit 0_mdrun.sh instead, 0_mdrun.sh contains the
-                # code that run pydr.py in rdir
-            else:
-                logging.error('{0} has not 0_mdrun.sh'.format(rdir))
-
-    # client:
-    # get the replica number from the server
-
-    else:
-        # 1. the server shall has been running, look for server address, could request for job now
-        # 2. after unexpected scient crush, everything should be restarted, and cpt file will be used.
-        # 1. Should check existence of hostfile to make sure server is running; how?
-        while True:
             j = Job()
-            import random
-            ll = ['a', 'b', 'c', 'd']
-            with open(cfg['system']['hostfile'], 'r') as inf:
-
-                uri = inf.readline().strip()
-                r = j.connect_server(uri, rep=random.sample(ll, 1)[0])
-                print r.content
+            if firsttime != 0:
+                # rep_info = rep.get_info()
+                rep_info = {
+                    'firsttime': firsttime,
+                    'replicaid': '00',
+                    'temperature' : 300,
+                    'temperature_to_change': 310,
+                    'potential_energy': 30.12315}
+            else:
+                rep_info = {
+                    'firsttime': firsttime,
+                    'temperature': 300,
+                    'replicaid': '00'}
+            r = j.connect_server(uri, rep_info)
+            print r.content, type(r.content)
+            d = json.loads(r.content)
+            rep = Replicas(d['replicaid'], d['temperature'], d['directory'])
+            print dir(rep)
+            print rep.get_potential_energy()
+            print rep.get_temperature_to_change(temp_tuple)
+            if r.content:
+                firsttime = 1
             break
-                # done something with r
-                # print r.content
-
-        # md_mdpf = os.path.join(rdir, '{0}_md.mdp'.format(pf))
-        # with open(cfg['system']['smp_md_mdp'], 'r') as inf:
-        #     with open(md_mdpf, 'w') as opf:
-        #         opf.writelines([Template(l).safe_substitute(dict(rep))
-`        #                         for l in inf.readlines()])
 
 if __name__ == "__main__":
     main()
