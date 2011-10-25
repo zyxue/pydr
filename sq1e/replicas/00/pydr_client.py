@@ -17,9 +17,9 @@ def main():
     cfg = ConfigObj('../../pydr.cfg')
     hostfile = cfg['system']['hostfile']
     temp_tuple = tuple(cfg['miscellaneous']['temp_tuple'])
-    print temp_tuple
 
-    firsttime = 0
+    rep = None
+    count = 0
     while True:
         if not os.path.exists(hostfile):
             logging.error('No hostfile!\n')
@@ -43,29 +43,28 @@ def main():
     # 1. Should check existence of hostfile to make sure server is running; how?
 
             j = Job()
-            if firsttime != 0:
-                # rep_info = rep.get_info()
+            if rep is None:
                 rep_info = {
-                    'firsttime': firsttime,
-                    'replicaid': '00',
-                    'temperature' : 300,
-                    'temperature_to_change': 310,
-                    'potential_energy': 30.12315}
+                    'firsttime' : 0,
+                    }
             else:
                 rep_info = {
-                    'firsttime': firsttime,
-                    'temperature': 300,
-                    'replicaid': '00'}
+                    'firsttime': 1,
+                    'replicaid': rep.replicaid,
+                    'temperature' : rep.temperature,
+                    'temperature_to_change': rep.get_temperature_to_change(temp_tuple),
+                    'potential_energy': rep.get_potential_energy(),
+                    'directory': rep.directory}
+
             r = j.connect_server(uri, rep_info)
             print r.content, type(r.content)
             d = json.loads(r.content)
             rep = Replicas(d['replicaid'], d['temperature'], d['directory'])
+            print type(d['temperature'])
             print dir(rep)
-            print rep.get_potential_energy()
-            print rep.get_temperature_to_change(temp_tuple)
-            if r.content:
-                firsttime = 1
-            break
+            count += 1
+            if count == 4:
+                break
 
 if __name__ == "__main__":
     main()

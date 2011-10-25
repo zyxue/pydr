@@ -1,1 +1,5 @@
 grompp -v -f ../../paramertersets/300.mdp -c 00_npt.gro -p 00.top -o 00_300.tpr -po 00_300
+
+
+naming issues
+int & str transformations

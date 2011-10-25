@@ -21,6 +21,31 @@ def connect_db():
     ss = sessionmaker(bind=db, autoflush=True, autocommit=False)()
     return ss
 
+def calc_DRPE(state, ts, uniform_spacing, c1=0.005, c2=0.005):
+    """
+    state: a list of temperatures for all the present replicas
+    ts: a list of preset temperatures
+    unform_spacing: as the name indicates
+    """
+
+    lambda_ = dict(zip(ts, uniform_spacing))
+
+    sstate = sorted(state)                        # sorted state
+    us_sstate = [lambda_[a] for a in sstate]      # uniform spacing of sorted state
+    w = len(ts) / float(len(us_sstate))
+
+    ll = range(len(us_sstate) + 1)
+    ll.remove(0)
+
+    ep = 0                                                # energetic penalty
+    for k1, i1 in zip(us_sstate, ll):
+        for k2, i2 in zip(us_sstate, ll):
+            ep += ((k1 - k2) - w * (i1 - i2)) ** 2
+    ep *= c1
+    dp = c2 * (sum(us_sstate) - w * sum(ll)) ** 2 # drift penalty
+    return ep + dp
+
+
 @app.before_request
 def before_request():
     g.db = connect_db()
@@ -36,9 +61,11 @@ def index():
     if request.method == 'POST':
         # transform multidict to a normal dict in one-key-one-value pattern
         rep_info = dict((k, v) for k, v in request.form.to_dict().iteritems())
-        print rep_info
+        print '#' * 20
+        print rep_info, rep_info.keys()
         
         if rep_info['firsttime'] == '0':
+            # assign the the replica where this pydr.py is located
             replicas = cfg['replicas']
             replicaid = os.path.basename(os.getenv('PWD'))
             replica = replicas[replicaid]
@@ -49,7 +76,14 @@ def index():
                 }
             return json.dumps(rep_to_assign_info)
         else:
-            return "Calculate STDR and replace a new rep"
+            rep_to_assign_info = {
+                'replicaid': rep_info['replicaid'],
+                'temperature': '310',
+                # query database, get global temperature, with potential energy,
+                # then calculate the new temperature to assign
+                'directory': rep_info['directory']
+                }
+            return json.dumps(rep_to_assign_info)
 
     if request.method == 'GET':
         return "hello"

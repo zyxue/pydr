@@ -1,10 +1,10 @@
-# This file was created Mon Oct 24 22:12:41 2011
+# This file was created Mon Oct 24 23:04:05 2011
 # by the following command:
 # g_energy -f ../../replicas/00/00_300.edr 
 #
 # g_energy is part of G R O M A C S:
 #
-# Gnomes, ROck Monsters And Chili Sauce
+# GROtesk MACabre and Sinister
 #
 @    title "Gromacs Energies"
 @    xaxis  label "Time (ps)"
