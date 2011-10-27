@@ -1,0 +1,70 @@
+#!/usr/bin/env python
+
+"""rep.get_potential_energy & rep.get_temperature_to_change are working"""
+
+import os
+import random
+import logging
+import requests
+import subprocess
+import threading
+import pickle
+import json
+from configobj import ConfigObj
+from flask import Flask, request, session, g
+from cls import *
+
+from pprint import pprint as pp
+
+def main():
+    cfg = ConfigObj('../../pydr.cfg')
+    hostfile = cfg['system']['hostfile']
+    temp_tuple = tuple(cfg['miscellaneous']['temp_tuple'])
+    print temp_tuple
+
+    firsttime = 0
+    while True:
+        if not os.path.exists(hostfile):
+            logging.error('No hostfile!\n')
+        else:
+            with open(hostfile, 'r') as inf:
+                # just 2 seconds, in case the hostfile has been opened by
+                # another node, but the writting hasn't finished yet. more than
+                # that means server died
+                for i in range(2):
+                    where = inf.tell()
+                    line = inf.readline().strip()
+                    if not line.strip():
+                        time.sleep(1)
+                        inf.seek(where)
+                    else:
+                        uri = line
+                        break
+
+            j = Job()
+            if firsttime != 0:
+                # rep_info = rep.get_info()
+                rep_info = {
+                    'firsttime': firsttime,
+                    'replicaid': '00',
+                    'temperature' : 300,
+                    'temperature_to_change': 310,
+                    'potential_energy': 30.12315}
+            else:
+                rep_info = {
+                    'firsttime': firsttime,
+                    'temperature': 300,
+                    'replicaid': '00'}
+            r = j.connect_server(uri, rep_info)
+            print r.content, type(r.content)
+            d = json.loads(r.content)
+            rep = Replicas(d['replicaid'], d['temperature'], d['directory'])
+            print dir(rep)
+            print rep.get_potential_energy()
+            print rep.get_temperature_to_change(temp_tuple)
+            if r.content:
+                firsttime = 1
+            break
+
+if __name__ == "__main__":
+    main()
