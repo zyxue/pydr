@@ -4,9 +4,14 @@ import copy
 import time
 import requests
 import subprocess
+import logging
+import threading
+from flask import Flask, request, session, g
+from string import Template
 from configobj import ConfigObj
-from Job import Job
+from cls import *
 
+import pydr
 import os
 import random
 
@@ -15,60 +20,68 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, Integer, String, Float
 
-Base = declarative_base()
-
 from pprint import pprint as pp
 
-def test_connect():
-    url = 'http://127.0.0.1:5000'
-    j = Job()
-    task = j.connect_server(url)
-    print task
+Base = declarative_base()
 
-def test_read_cfg():
-    cfg = ConfigObj('/home/zyxue/projects/pydr/sq1e/pydr.cfg')
+def run_app():
+    pydr.app.run()
 
-def test_init_db():
-    cfg = ConfigObj('/home/zyxue/projects/pydr/sq1e/pydr.cfg')
+def main():
+    cfg = ConfigObj('./pydr.cfg')
     database = cfg['system']['database']
-    db = sqlmy.create_engine('sqlite:///{0}'.format(database), echo=True)
-    Session = sessionmaker(bind=db)
-    Session.configure(bind=db)
-    ss = Session()
-    if not os.path.exists(database):                              # first time
-        Base.metadata.create_all(db)
-        for r in cfg['replicas']:
-            rep = cfg['replicas'][r]
-            ss.add(Replica(rep['ref_t'], rep['gen_temp'], 0))
-        ss.commit()
+
+    # should be done by the server
+    if not os.path.exists(database): # first time
+        init_db()
+
+        # start_server
+        # threading.Thread(target=run_app).start()
+        uri = 'http://127.0.0.1:5000'
+        # write server address to some file
+        with open(cfg['system']['hostfile'], 'w') as opf:
+            opf.write('{0}\n'.format(uri))
+
+        # starts pydr in all directories
+        for pset in cfg['parametersets']:
+            s = cfg['parametersets'][pset]
+            os.chdir(rdir)
+            if os.path.exists('pydr.py'):
+                print rdir, 'pydr.py'    
+                # in real submit pydr.py instead, pydr.py contains the
+                # code that run pydr.py in rdir
+            else:
+                logging.error('{0} has not pydr.py'.format(rdir))
+
+    # Client:
+
     else:
-        q = ss.query(Replica)
-        qf = q.filter(Replica.ref_t == '300')[0]
-        pp(type(qf))
-        pp(dir(qf))
-        print type(qf.status)
+        # 1. the server shall has been running, look for server address, could request for job now
+        # 2. after unexpected scient crush, everything should be restarted, and cpt file will be used.
+        # 1. Should check existence of hostfile to make sure server is running; how?
+        firsttime = True
+        while True:
+            j = Job()
+            with open(cfg['system']['hostfile'], 'r') as inf:
+                uri = inf.readline().strip()
+                r = j.connect_server(uri, firsttime=firsttime)
+                if r.content == 'endjob':
+                    break
+                else:
+                    mdp_file = r.content
+                    firsttime = False
+                # subprocess.call('mdrun.sh')
+                # done something with r
+                # print r.content
 
-class Replica(Base):
-    __tablename__ = 'replicas'
-
-    replicaid = Column(Integer, primary_key=True)
-    ref_t = Column(String)
-    gen_temp = Column(String)
-    status = Column(Integer)
-
-    def __init__(self, ref_t, gen_temp, status):
-        self.ref_t = ref_t
-        self.gen_temp = gen_temp
-        self.status = status
-
-    def __repr__(self):
-        return "<id: %d ref_t: %s gen_temp: %s status %d>" % (
-            self.replicaid, self.ref_t, self.gen_temp, self.status)
-
+        # md_mdpf = os.path.join(rdir, '{0}_md.mdp'.format(pf))
+        # with open(cfg['system']['smp_md_mdp'], 'r') as inf:
+        #     with open(md_mdpf, 'w') as opf:
+        #         opf.writelines([Template(l).safe_substitute(dict(rep))
+        #                         for l in inf.readlines()])
 
 if __name__ == "__main__":
-    test_connect()
-
+    main()
 
 # class Exchanges(Base):
 #     __tablename__ = "Exchanges"
