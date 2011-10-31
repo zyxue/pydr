@@ -98,8 +98,8 @@ def index():
         
         if rep_info['firsttime'] == '1':
             # assign the the replica where this pydr.py is located
+            rid = rep_info['rid']
             replicas = cfg['replicas']
-            rid = os.path.basename(os.getenv('PWD'))
             r = replicas[rid]
             repcount = 1
             new_rep_info = {

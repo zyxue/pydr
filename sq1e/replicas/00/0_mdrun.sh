@@ -1,7 +1,4 @@
 
-
-
-
 grompp -v -f ../../parametersets/300.mdp \
        -c 00_300_p0003.gro \
        -p ../../miscellaneous/sq1e.top \

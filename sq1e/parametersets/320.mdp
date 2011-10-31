@@ -139,7 +139,7 @@ tcoupl                   = nose-hoover
 tc-grps                  = Protein Non-Protein
 ; Time constant (ps) and reference temperature (K)
 tau_t                    = 0.1     0.1
-ref_t                    = 310	   310
+ref_t                    = 320	   320
 ; Pressure coupling     
 pcoupl                   = Parrinello-Rahman
 pcoupltype               = isotropic
@@ -192,7 +192,7 @@ annealing_temp           =
 
 ; GENERATE VELOCITIES FOR STARTUP RUN
 gen_vel                  = no
-gen-temp                 = 310
+gen-temp                 = 320
 gen-seed                 = -1
 
 ; OPTIONS FOR BONDS    

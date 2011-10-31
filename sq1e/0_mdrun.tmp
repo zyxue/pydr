@@ -1,7 +1,4 @@
 
-
-
-
 grompp -v -f ${_MDPF_} \
        -c ${_OLD_DEFFNM_}.gro \
        -p ../../miscellaneous/sq1e.top \
