@@ -8,6 +8,9 @@ import threading
 import pickle
 import json
 import socket
+import StringIO
+from string import Template
+
 from configobj import ConfigObj
 from flask import Flask, request, session, g
 
@@ -60,8 +63,15 @@ def main():
             r = j.connect_server(uri, rep_info)
             print r.content, type(r.content)
             j = json.loads(r.content)
-            rep = Replicas(j['rid'], j['temp'], j['directory'], j['repcount'])
-            print dir(rep)
+            rep = Replicas(j['rid'], j['old_temp'], j['temp'], j['directory'], j['repcount'])
+            kwargs = {'_MDPF_': rep.mdpf,
+                      '_OLD_DEFFNM_': rep.old_deffnm,
+                      '_DEFFNM_': rep.deffnm}
+            with open('../../0_mdrun.tmp', 'r') as inf:
+                with open('0_mdrun.sh', 'w') as opf:
+                    opf.writelines([Template(l).safe_substitute(kwargs)
+                                   for l in inf.readlines()])
+            subprocess.call(['bash', '0_mdrun.sh'])
             count += 1
             if count == 4:
                 break
@@ -95,17 +105,26 @@ class Job(object):
 
 
 class Replicas(object):                  # used to be sent from client to server
-    def __init__(self, rid, temp, directory, repcount):
+    def __init__(self, rid, old_temp, temp, directory, repcount):
         self.rid  = rid                                 # e.g. 00 01
+        self.old_temp = old_temp
         self.temp = temp
         self.directory = directory
         self.repcount = repcount
+        self.mdpf = '../../parametersets/{0}.mdp'.format(temp)
+        if repcount == 1:
+            self.old_deffnm = '{0}_npt'.format(rid)
+        else:
+            self.old_deffnm = '{0}_{1}_p{2:04d}'.format(rid, old_temp, repcount-1)
         self.deffnm = '{0}_{1}_p{2:04d}'.format(rid, temp, repcount)
 
     def get_pot_ener(self):
         def pe(edrf):
             i = 'Potential'
-            p = subprocess.Popen(['g_energy', '-f', edrf], stdin=PIPE, stdout=PIPE, stderr=PIPE)
+            p = subprocess.Popen(['g_energy', '-f', edrf], 
+                                 stdin=subprocess.PIPE, 
+                                 stdout=subprocess.PIPE, 
+                                 stderr=subprocess.PIPE)
             stdout, stderr = p.communicate(i)
             for line in StringIO.StringIO(stdout):
                 if line.startswith('Potential'):

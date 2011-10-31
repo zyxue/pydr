@@ -104,6 +104,7 @@ def index():
             repcount = 1
             new_rep_info = {
                 'rid': rid,
+                'old_temp': None,
                 'temp': r['init_temp'],
                 'directory': r['directory'],
                 'repcount':repcount
@@ -123,9 +124,6 @@ def index():
             _state2 = copy.copy(current_temps)
             _state2[current_temps.index(t1)] = t2
             state2 = _state2
-
-            print '#' * 20
-            print state2
 
             prob, DRPE1, DRPE2 = probability(t1, t2, pot_ener, state1, state2,
                                              ts, u, a1=1, a2=1, c1=0.005, c2=0.005)
@@ -150,6 +148,7 @@ def index():
         
             new_rep_info = {
                 'rid': rid,
+                'old_temp': t1,
                 'temp': new_temp,
                 'directory': rep_info['directory'],
                 'repcount': repcount

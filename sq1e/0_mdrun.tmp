@@ -1,0 +1,11 @@
+
+
+
+
+grompp -v -f ${_MDPF_} \
+       -c ${_OLD_DEFFNM_}.gro \
+       -p ../../miscellaneous/sq1e.top \
+       -o ${_DEFFNM_}.tpr \
+       -po ${_DEFFNM_}.mdp
+
+mdrun -v -deffnm ${_DEFFNM_}
