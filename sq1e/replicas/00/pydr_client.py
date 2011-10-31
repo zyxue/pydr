@@ -7,16 +7,16 @@ import subprocess
 import threading
 import pickle
 import json
+import socket
 from configobj import ConfigObj
 from flask import Flask, request, session, g
-from cls import *
 
 from pprint import pprint as pp
 
 def main():
     cfg = ConfigObj('../../pydr.cfg')
     hostfile = cfg['system']['hostfile']
-    temp_tuple = tuple(cfg['miscellaneous']['temp_tuple'])
+    init_temps = cfg['miscellaneous']['init_temps']
 
     rep = None
     count = 0
@@ -45,103 +45,91 @@ def main():
             j = Job()
             if rep is None:
                 rep_info = {
-                    'firsttime' : 0,
+                    'firsttime' : 1,
                     }
             else:
                 rep_info = {
-                    'firsttime': 1,
-                    'replicaid': rep.replicaid,
-                    'temperature' : rep.temperature,
-                    'temperature_to_change': rep.get_temperature_to_change(temp_tuple),
-                    'potential_energy': rep.get_potential_energy(),
-                    'directory': rep.directory}
+                    'firsttime': 0,
+                    'rid': rep.rid,
+                    'temp' : rep.temp,
+                    'temp_to_change': rep.get_temp_to_change(init_temps),
+                    'pot_ener': rep.get_pot_ener(),
+                    'directory': rep.directory,
+                    'repcount': rep.repcount}
 
             r = j.connect_server(uri, rep_info)
             print r.content, type(r.content)
-            d = json.loads(r.content)
-            rep = Replicas(d['replicaid'], d['temperature'], d['directory'])
-            print type(d['temperature'])
+            j = json.loads(r.content)
+            rep = Replicas(j['rid'], j['temp'], j['directory'], j['repcount'])
             print dir(rep)
             count += 1
             if count == 4:
                 break
 
+
+class Job(object):
+    def __init__(self):
+        hostname = socket.gethostname()
+        self.pbs_hostname = hostname
+        if hostname == "zyxue-desktop":
+            self.pbs_jobid = 'zyxue_JOBID'
+            self.pbs_jobname = 'zyxue_JOBNAME'
+            self.pbs_nodenum = 'zyxue_NUM_NODES'
+            self.pbs_queue = 'zyxue_QUEUE'         # batch_eth, batch_ib, debug
+            self.pbs_o_workdir = 'zyxue_O_WORKDIR'
+
+        else:                                               # assume on scinet
+            self.pbs_jobid = os.getenv('PBS_JOBID')
+            self.pbs_jobname = os.getenv('PBS_JOBNAME')
+            self.pbs_nodenum = os.getenv('PBS_NUM_NODES')
+            self.pbs_queue = os.getenv('PBS_QUEUE') # batch_eth, batch_ib, debug
+            self.pbs_o_workdir = os.getenv('PBS_O_WORKDIR')
+        
+    def connect_server(self, uri, data):
+        data.update(self.__dict__)
+        return requests.post(uri, data)
+
+    def check(self):
+        for i in dir(self):
+            print getattr(self, i)
+
+
+class Replicas(object):                  # used to be sent from client to server
+    def __init__(self, rid, temp, directory, repcount):
+        self.rid  = rid                                 # e.g. 00 01
+        self.temp = temp
+        self.directory = directory
+        self.repcount = repcount
+        self.deffnm = '{0}_{1}_p{2:04d}'.format(rid, temp, repcount)
+
+    def get_pot_ener(self):
+        def pe(edrf):
+            i = 'Potential'
+            p = subprocess.Popen(['g_energy', '-f', edrf], stdin=PIPE, stdout=PIPE, stderr=PIPE)
+            stdout, stderr = p.communicate(i)
+            for line in StringIO.StringIO(stdout):
+                if line.startswith('Potential'):
+                    return line.split()[1]
+
+        edrf = os.path.join(self.directory, '{0}.edr'.format(self.deffnm))
+        if os.path.exists(edrf):
+            return pe(edrf)
+        else:
+            logging.error("{0} doesn't exist when trying to get potential energy".format(edrf))
+            return '0'
+
+    def get_temp_to_change(self, temp_tuple):
+        if not self.temp in temp_tuple:
+            logging.error('{0} is not in the temp_list'.format(self.temp))
+        else:
+            index = temp_tuple.index(self.temp)
+            if index == 0:
+                t_to_change = temp_tuple[1]
+            elif index == len(temp_tuple) - 1:
+                t_to_change = temp_tuple[-1]
+            else:
+                t_to_change = temp_tuple[index + random.choice([-1, 1])]
+            return t_to_change
+
 if __name__ == "__main__":
     main()
-
-# class Exchanges(Base):
-#     __tablename__ = "Exchanges"
-    
-#     exchangeid = Column(Integer, primary_key=True)
-#     potential_energy = Column(Float)
-#     original = Column(Integer)
-#     to_change = Column(Integer)
-#     changed = Column(Integer)
-#     global_temps = Column(String)
-#     date = Column(String)
-    
-#     def __init__(self, potential_energy, original, to_change, changed, global_temps, date): # 
-#         self.potential_energy = potential_energy
-#         self.original = original
-#         self.to_change = to_change
-#         self.changed = changed
-#         self.global_temps = global_temps
-#         self.date = date
-
-#     def __repr__(self):
-#         return "<%r %r %r %r %r %r>" % (self.potential_energy, self.original, self.to_change, self.changed, self.global_temps, self.date)
-
-
-# def exchange_or_not(original, to_change):
-#     import random
-#     if random.randint(0, 1) == 1:
-#         changed = to_change
-#     else:
-#         changed = original
-#     return changed
-
-# def test_init_values():
-#     initial_temps = range(200, 301, 10)
-#     global_temps = ' '.join([str(i) for i in initial_temps])
-
-#     potential_energy = None
-#     original = None
-#     to_change = None
-#     changed = None
-#     date = time.ctime()
-
-#     return potential_energy, original, to_change, changed, global_temps, date
-
-# def test_write_db(session):
-#     potential_energy, original, to_change, changed, global_temps, date = test_init_values()
-
-#     gt = global_temps.split(' ')
-
-#     for i in range(10):
-#         k = random.randint(0,10)
-#         original = gt[k]
-#         if k == 10:
-#             to_change = gt[0]
-#         else:
-#             to_change = gt[k+1]
-#             changed = exchange_or_not(original, to_change)
-#             gt[k] = changed
-#             global_temps = ' '.join(gt)
-#             date = time.ctime()
-#             ex = Exchanges(potential_energy, original, to_change, changed, global_temps, date)
-#         ss.add(ex)
-
-#     session.commit()
-
-# def test_read_db(session):
-#     q = session.query(Exchanges)
-#     s = q.filter(Exchanges.exchangeid == '1')
-#     print "#" * 20
-#     print s[0].global_temps
-#     print "#" * 20
-
-# if __name__ == "__main__":
-#     # firsttime_write_db(ss)
-#     # test_write_db(ss)
-#     test_read_db(ss)
-

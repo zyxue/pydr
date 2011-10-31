@@ -27,31 +27,6 @@ Base = declarative_base()
 #         ss.add(ad)
 #     ss.commit()
 
-class Job(object):
-    def __init__(self):
-        hostname = socket.gethostname()
-        self.pbs_hostname = hostname
-        if hostname == "zyxue-desktop":
-            self.pbs_jobid = 'zyxue_JOBID'
-            self.pbs_jobname = 'zyxue_JOBNAME'
-            self.pbs_nodenum = 'zyxue_NUM_NODES'
-            self.pbs_queue = 'zyxue_QUEUE'         # batch_eth, batch_ib, debug
-            self.pbs_o_workdir = 'zyxue_O_WORKDIR'
-
-        else:                                               # assume on scinet
-            self.pbs_jobid = os.getenv('PBS_JOBID')
-            self.pbs_jobname = os.getenv('PBS_JOBNAME')
-            self.pbs_nodenum = os.getenv('PBS_NUM_NODES')
-            self.pbs_queue = os.getenv('PBS_QUEUE') # batch_eth, batch_ib, debug
-            self.pbs_o_workdir = os.getenv('PBS_O_WORKDIR')
-        
-    def connect_server(self, uri, data):
-        data.update(self.__dict__)
-        return requests.post(uri, data)
-
-    def check(self):
-        for i in dir(self):
-            print getattr(self, i)
 
 # class Parameterset(object):
 #     def __init__(self, temperature):
