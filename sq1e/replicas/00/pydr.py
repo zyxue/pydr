@@ -172,12 +172,14 @@ class Exchange(Base):
     global_temp = Column(String)
     date = Column(String)
 
-if __name__ == "__main__":
-    
+def parse_cmd():
     parser = optparse.OptionParser()
     parser.add_option('-c', '--cfg', dest='cfg_file', default='../../pydr.cfg', help="where's the configuration file")
     options, args = parser.parse_args()
+    return options
 
+if __name__ == "__main__":
+    options = parse_cmd()
     cfg = ConfigObj(options.cfg_file)
 
     ts = cfg['miscellaneous']['init_temps']
