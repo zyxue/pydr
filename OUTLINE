@@ -1,0 +1,19 @@
+1. Read cfg file
+2. generate mdp_files
+3. create & write to DB
+4. (Mdrun) # ./run.sh -> gromacs
+5. read from db
+6. (Exchange)
+7. write to db, go back to 3
+
+/client
+	/0_mdrun.sh
+	/*tpr file
+
+python pydr.py
+read cfg
+init_db, write Replicas info
+
+server: init_jobs, records job_info (time when the job is dispatched), submit_jobs, 
+
+client: when the job starts, send the info(jobib, start_time, jobname) to server.

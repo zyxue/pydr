@@ -1,0 +1,11 @@
+#include "ffoplsaa.itp"
+
+#include "sq1.itp"
+#include "eth.itp"
+
+[ system ]
+sq1e
+
+[ molecules ]
+sq1	    1
+ETH	    2200
