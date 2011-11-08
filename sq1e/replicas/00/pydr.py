@@ -3,6 +3,7 @@
 import os
 import socket
 import optparse
+
 import json
 import time
 import copy
@@ -326,7 +327,6 @@ class Replica(object):                  # used to be sent from client to server
                 t_to_change = temp_tuple[index + random.choice([-1, 1])]
             return t_to_change
 
-
 if __name__ == "__main__":
     options = parse_cmd()
     cfg = ConfigObj(options.cfg_file)
@@ -338,6 +338,7 @@ if __name__ == "__main__":
     hostname = socket.gethostname()
     hostip = socket.gethostbyname(hostname)
     port = os.getenv('PORT', 5000)
+
     debug = False
     if not os.path.exists(hostfile):
         with open(hostfile, 'w') as opf:
@@ -348,3 +349,4 @@ if __name__ == "__main__":
 
     time.sleep(5)
     main()
+
